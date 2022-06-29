@@ -1,8 +1,11 @@
+from operator import truediv
 from django.db import models
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.contrib.auth.models import AbstractUser, BaseUserManager, PermissionsMixin
 from django.core.validators import validate_email
+from painless.models.validations import validate_phone_number
+from painless.models.mixins import TimeStampedMixin
 
 
 
@@ -41,12 +44,65 @@ class UserManager(BaseUserManager):
         return self._create_user(email, password, **extra_fields)
 
 
-class User(AbstractUser):
+class City(TimeStampedMixin):
+   
+    title = models.CharField(max_length = 64, unique = True, verbose_name = _('title'), null = True, blank = True)
+    province = models.ForeignKey('Province', on_delete = models.CASCADE, related_name='provice')
+
+    class Meta:
+        verbose_name = _('City')
+        verbose_name_plural = _('Cities')
+
+    def __str__(self):
+        return self.title
+
+
+class Province(TimeStampedMixin):
+
+    title = models.CharField(max_length = 64, null = True, blank = True)
+
+    class Meta:
+        verbose_name = _('Province')
+        verbose_name_plural = _('Provinces')
+
+    def __str__(self):
+        return self.title
+
+
+class User(AbstractUser, PermissionsMixin,TimeStampedMixin):
+    date_joined = None
+    published_at = None
+    GENDER_MALE = 1
+    GENDER_FEMALE = 2
+    GENDER_TRANS = 3
+    GENDER_CHOICES = [
+        (GENDER_MALE, _("Male")),
+        (GENDER_FEMALE, _("Female")),
+        (GENDER_TRANS, _("Trans")),
+    ]
+
+
+    VALIDATION_TYPE_MOBILE = 1
+    VALIDATION_TYPE_EMAIL = 2
+    VALIDATION_TYPE_CHOICES = [
+        (VALIDATION_TYPE_MOBILE, _("Mobile")),
+        (VALIDATION_TYPE_EMAIL, _("Email")),
+    ]
+
 
     email = models.EmailField(unique=True, validators = [validate_email])
-    mobile = models.CharField(max_length = 12)
-    job = models.CharField(max_length=128)
-    
+    mobile_number = models.CharField(max_length = 12, validators=[
+           validate_phone_number
+        ])
+  
+    profile_image_url = models.ImageField(upload_to="avatar/%Y/%m/%d", null=True, blank=True)
+    varification_type = models.PositiveSmallIntegerField(choices=VALIDATION_TYPE_CHOICES, null=True, blank=True, default=1)
+    gender = models.PositiveSmallIntegerField(choices=GENDER_CHOICES, null=True, blank=True, default=1)
+    job = models.CharField(max_length=128, blank = True, null=True)
+    city = models.ForeignKey('City', on_delete=models.CASCADE,null = True, blank = True)
+    address = models.CharField(max_length=228, blank = True, null = True)
+    birth_date = models.DateField(null=True, blank=True)
+    level = models.IntegerField(blank = True, null = True)
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
 

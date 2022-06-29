@@ -1,20 +1,14 @@
 
 import os
 from pathlib import Path
+from decouple import config
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-z#bpgt&%@2hdfyqrq=&6iqq)_m%6l8)3f2a9xt+m&6l*c*ub$p'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
-
-
+SECRET_KEY = config('SECRET_KEY')
+DEBUG = config('DEBUG', default=False, cast=bool)
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=lambda v: [s.strip() for s in v.split(',')])
 
 
 INSTALLED_APPS = [
@@ -27,10 +21,17 @@ INSTALLED_APPS = [
     'rest_framework',
     'api',
     'accounts',
-    'users',
-   
+    'rest_framework.authtoken',
+    'dj_rest_auth',
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'dj_rest_auth.registration',
 
 ]
+SITE_ID = 1
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -93,8 +94,13 @@ AUTH_USER_MODEL = 'accounts.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
-    ]
+        'api.permissions.IsStaffOrReadOnly',
+    ],
+  
+     'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+    ),
+    
 }
 
 
@@ -116,3 +122,13 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media', 'upload')
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'media', 'static'),
 )
+
+
+
+EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'siyamak1981@gmail.com'
+EMAIL_HOST_PASSWORD = '****************'
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+
